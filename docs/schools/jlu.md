@@ -1,3 +1,7 @@
+<script setup>
+import { jluMajors } from '../.vitepress/data/jluRussian202'
+</script>
+
 # 吉林大学 · 俄语（202）可报考专业一览
 
 > 本页逐条拆解《吉林大学2026年硕士研究生招生专业目录》，列出**初试外国语可选「202 俄语」**的全部专业。
@@ -24,7 +28,7 @@
 
 下方表格支持按**招生计划 / 学位类型 / 门类**筛选，或直接搜索专业代码、专业名称与学院名；结果按招生学院分组呈现。
 
-<JluMajorTable />
+<MajorTable :majors="jluMajors" />
 
 ## 三、数据来源与核实方式
 

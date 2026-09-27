@@ -23,7 +23,7 @@
 | [俄语202专区](https://lzs2007.github.io/xiaoyuzhong-kaoyan/russian-202/) | 考试性质与科目代码、大纲摘要、题型分值、报名与考试时间、国家线与自划线、调剂、参考书目、FAQ |
 | [日语203专区](https://lzs2007.github.io/xiaoyuzhong-kaoyan/japanese-203/) | 科目性质、题型分值、报名时间线、国家线，以及与俄语202的差异对比 |
 | [院校名录](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/) | 逐校核实“哪些院校的哪些专业接受 202 / 203”，附官方目录来源与原文摘录；支持按省份、语种可选性、核实状态筛选 |
-| 单校深度拆解 | 对重点院校按官方目录**逐专业**列出可选语种与招生人数（如 [吉林大学 · 俄语202可报考专业](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/jlu)，覆盖 116 个专业条目） |
+| 单校深度拆解 | 对重点院校按官方专业目录**逐专业、逐研究方向**列出可选语种与招生人数。已上线 [吉林大学 · 俄语202可报考专业](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/jlu)（116 个专业条目）、[哈尔滨工程大学 · 俄语202可报考专业](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/heu)（64 个专业 / 134 个可考方向，含 29 个"仅英语"专项方向提示） |
 | [政策公告](https://lzs2007.github.io/xiaoyuzhong-kaoyan/news/) | 教育部、研招网等官方渠道的招生政策与公告，标注来源与适用年份 |
 | [关于与免责声明](https://lzs2007.github.io/xiaoyuzhong-kaoyan/about) | 信息来源规范、核实流程、更新日志与纠错渠道 |
 
@@ -59,19 +59,23 @@ docs/
 ├── .vitepress/
 │   ├── config.mts              # 站点配置（导航、侧边栏、搜索）
 │   ├── data/
+│   │   ├── majorTypes.ts       # 单校专业清单通用数据类型
 │   │   ├── schools.ts          # 院校名录数据
-│   │   └── jluRussian202.ts    # 吉林大学俄语202可报考专业数据
+│   │   ├── jluRussian202.ts    # 吉林大学俄语202可报考专业数据
+│   │   └── heuRussian202.ts    # 哈尔滨工程大学俄语202可报考专业数据
 │   └── theme/
 │       ├── index.ts
+│       ├── custom.css          # 主题美化（配色、表格、卡片、交互反馈）
 │       └── components/
 │           ├── SchoolTable.vue     # 院校名录筛选表格
-│           └── JluMajorTable.vue   # 单校专业清单表格
+│           └── MajorTable.vue      # 单校专业清单通用表格（自适应列 + 方向展开）
 ├── index.md                 # 首页
 ├── russian-202/index.md     # 俄语202专区
 ├── japanese-203/index.md    # 日语203专区
 ├── schools/
 │   ├── index.md             # 院校名录
-│   └── jlu.md               # 吉林大学 · 俄语202可报考专业
+│   ├── jlu.md               # 吉林大学 · 俄语202可报考专业
+│   └── heu.md               # 哈尔滨工程大学 · 俄语202可报考专业
 ├── news/index.md            # 政策公告
 └── about.md                 # 关于与免责声明
 ```

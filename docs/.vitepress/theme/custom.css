@@ -1,0 +1,202 @@
+/* ==========================================================================
+   小语种考研信息网 —— 自定义主题样式
+   目标：更清爽的阅读节奏、更明确的来源层级、更友好的表格与交互反馈
+   ========================================================================== */
+
+/* ---------- 配色：以沉稳的靛蓝为主色 ---------- */
+:root {
+  --vp-c-brand-1: #3b5bdb;
+  --vp-c-brand-2: #4c6ef5;
+  --vp-c-brand-3: #5c7cfa;
+  --vp-c-brand-soft: rgba(76, 110, 245, 0.14);
+
+  --vp-button-brand-bg: var(--vp-c-brand-1);
+  --vp-button-brand-hover-bg: var(--vp-c-brand-2);
+  --vp-button-brand-active-bg: var(--vp-c-brand-1);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #3b5bdb 20%, #15aabf 80%);
+
+  --vp-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Source Han Sans SC', sans-serif;
+}
+
+.dark {
+  --vp-c-brand-1: #7c95f7;
+  --vp-c-brand-2: #6b87f5;
+  --vp-c-brand-3: #5c7cfa;
+  --vp-c-brand-soft: rgba(124, 149, 247, 0.16);
+}
+
+/* ---------- 首页 Hero ---------- */
+.VPHero .name {
+  letter-spacing: -0.02em;
+}
+.VPHero .text {
+  font-size: 26px !important;
+  line-height: 1.35 !important;
+  color: var(--vp-c-text-1);
+}
+.VPHero .tagline {
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+.VPHero .actions .VPButton {
+  border-radius: 10px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.VPHero .actions .VPButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -10px var(--vp-c-brand-1);
+}
+
+/* ---------- 首页特性卡片 ---------- */
+.VPFeatures .VPFeature {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 14px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.VPFeatures .VPFeature:hover {
+  transform: translateY(-3px);
+  border-color: var(--vp-c-brand-2);
+  box-shadow: 0 14px 30px -18px var(--vp-c-brand-1);
+}
+.VPFeature .title {
+  font-size: 16px;
+}
+.VPFeature .details {
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+
+/* ---------- 正文排版 ---------- */
+.vp-doc h1 {
+  letter-spacing: -0.01em;
+}
+.vp-doc h2 {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--vp-c-divider);
+}
+.vp-doc h3 {
+  margin-top: 26px;
+}
+.vp-doc p,
+.vp-doc li {
+  line-height: 1.78;
+}
+.vp-doc a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* ---------- 引用块：做成"信息溯源"卡片 ---------- */
+.vp-doc blockquote {
+  margin: 18px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--vp-c-brand-2);
+  border-radius: 0 10px 10px 0;
+  background: var(--vp-c-bg-soft);
+}
+.vp-doc blockquote > p {
+  font-size: 13.5px;
+  color: var(--vp-c-text-2);
+  margin: 4px 0;
+}
+.vp-doc blockquote > p:first-child {
+  color: var(--vp-c-text-1);
+}
+
+/* ---------- 提示块 ---------- */
+.vp-doc .custom-block {
+  border-radius: 12px;
+  border-width: 1px;
+  padding: 14px 18px;
+}
+.vp-doc .custom-block .custom-block-title {
+  font-weight: 600;
+}
+
+/* ---------- 表格：统一为圆角卡片风 ---------- */
+.vp-doc table {
+  display: table;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 13.5px;
+}
+.vp-doc table thead th {
+  background: var(--vp-c-bg-alt);
+  font-size: 12.5px;
+  color: var(--vp-c-text-2);
+  white-space: nowrap;
+}
+.vp-doc table th,
+.vp-doc table td {
+  border: none;
+  border-bottom: 1px solid var(--vp-c-divider);
+  padding: 9px 12px;
+}
+.vp-doc table tbody tr:last-child td {
+  border-bottom: none;
+}
+.vp-doc table tbody tr:hover {
+  background: var(--vp-c-bg-soft);
+}
+
+/* ---------- 行内代码与折叠块 ---------- */
+.vp-doc :not(pre) > code {
+  border-radius: 6px;
+  font-size: 0.86em;
+  background: var(--vp-c-bg-soft);
+}
+.vp-doc details {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  padding: 4px 12px;
+  margin: 10px 0;
+  background: var(--vp-c-bg-soft);
+}
+.vp-doc details summary {
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.vp-doc details summary:hover {
+  color: var(--vp-c-brand-1);
+}
+
+/* ---------- 侧边栏 & 导航 ---------- */
+.VPSidebarItem.is-active > .item .link > .text {
+  color: var(--vp-c-brand-1);
+  font-weight: 600;
+}
+.VPSidebarItem.level-0 > .item > .text {
+  font-weight: 700;
+}
+.VPNavBarTitle .title {
+  letter-spacing: -0.01em;
+}
+
+/* ---------- 滚动条 ---------- */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--vp-c-divider);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vp-c-text-3);
+}
+
+/* ---------- 无障碍：更清晰的焦点环 ---------- */
+:focus-visible {
+  outline: 2px solid var(--vp-c-brand-2);
+  outline-offset: 2px;
+  border-radius: 6px;
+}

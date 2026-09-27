@@ -37,8 +37,14 @@ export default defineConfig({
         {
           text: '院校名录',
           items: [
-            { text: '名录总览', link: '/schools/' },
-            { text: '吉林大学 · 俄语202可报考专业', link: '/schools/jlu' }
+            { text: '名录总览', link: '/schools/' }
+          ]
+        },
+        {
+          text: '单校深度拆解',
+          items: [
+            { text: '吉林大学 · 俄语202可报考专业', link: '/schools/jlu' },
+            { text: '哈尔滨工程大学 · 俄语202可报考专业', link: '/schools/heu' }
           ]
         }
       ]
