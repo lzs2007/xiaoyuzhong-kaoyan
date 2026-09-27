@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { withBase } from 'vitepress'
 import { schools, type School } from '../../data/schools'
 
 const keyword = ref('')
@@ -87,6 +88,9 @@ function badgeClass(status: string) {
                   <strong>来源：</strong>{{ s.sourceName }}
                   <a :href="s.sourceUrl" target="_blank" rel="noopener noreferrer">原文链接</a>
                 </p>
+                <p v-if="s.detailLink">
+                  <a :href="withBase(s.detailLink)" class="detail-link">→ 查看本站逐专业详情页</a>
+                </p>
               </details>
             </td>
           </tr>
@@ -127,4 +131,5 @@ th { white-space: nowrap; }
 .badge.gray { background: var(--vp-c-gray-soft); color: var(--vp-c-text-2); }
 details summary { cursor: pointer; color: var(--vp-c-brand-1); font-size: 13px; }
 details p { margin: 6px 0; font-size: 13px; }
+.detail-link { font-size: 13px; font-weight: 600; }
 </style>

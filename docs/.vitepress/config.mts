@@ -32,6 +32,15 @@ export default defineConfig({
             { text: '专区首页', link: '/japanese-203/' }
           ]
         }
+      ],
+      '/schools/': [
+        {
+          text: '院校名录',
+          items: [
+            { text: '名录总览', link: '/schools/' },
+            { text: '吉林大学 · 俄语202可报考专业', link: '/schools/jlu' }
+          ]
+        }
       ]
     },
     search: {
