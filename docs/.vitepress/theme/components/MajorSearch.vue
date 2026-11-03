@@ -13,20 +13,94 @@ import {
   serializeFilters,
 } from '../../data/majorSearch'
 import { catalogSources } from '../../data/collectedEngineering'
+import MajorComparison from './MajorComparison.vue'
+import {
+  comparisonKey,
+  comparisonLimit,
+  comparisonStorageKey,
+  comparisonsCsv,
+  makeComparison,
+  resolveComparison,
+  restoreComparisons,
+} from '../../data/majorComparison'
+import type { ComparisonSelection } from '../../data/majorComparison'
+import type { SearchMajor } from '../../data/majorSearch'
 const filters = reactive({ ...defaults })
 const ready = ref(false)
+const selections = ref<ComparisonSelection[]>([])
+const storageFailed = ref(false)
+const comparisonPanel = ref<InstanceType<typeof MajorComparison> | null>(null)
+const selectedItems = computed(() =>
+  selections.value.flatMap((s) => {
+    const item = resolveComparison(s)
+    return item ? [item] : []
+  }),
+)
+function isSelected(entry: SearchMajor) {
+  const key = comparisonKey(makeComparison(entry, filters))
+  return selections.value.some((s) => comparisonKey(s) === key)
+}
+function removeSelection(key: string) {
+  selections.value = selections.value.filter((s) => comparisonKey(s) !== key)
+}
+function toggleComparison(entry: SearchMajor) {
+  if (isSelected(entry))
+    removeSelection(comparisonKey(makeComparison(entry, filters)))
+  else if (selections.value.length < comparisonLimit)
+    selections.value.push(makeComparison(entry, filters))
+}
+function downloadCsv(selected = false) {
+  const items = selected
+    ? selectedItems.value
+    : results.value.flatMap((entry) => {
+        const item = resolveComparison(makeComparison(entry, filters))
+        return item ? [item] : []
+      })
+  if (!items.length) return
+  const url = URL.createObjectURL(
+    new Blob([comparisonsCsv(items)], { type: 'text/csv;charset=utf-8' }),
+  )
+  const a = document.createElement('a')
+  a.href = url
+  a.download = selected
+    ? '选校对比.csv'
+    : `${filters.year}-${filters.language}-院校筛选.csv`
+  document.body.append(a)
+  a.click()
+  a.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
 const pendingSchools = computed(() =>
   coverage.filter(
-    (s) => s.year === filters.year && matchesRegion(s.province, filters.region),
+    (s) =>
+      s.year === filters.year &&
+      matchesRegion(s.province, filters.region) &&
+      (!filters.province || s.province === filters.province) &&
+      (!filters.school || s.id === filters.school),
   ),
 )
 function changeRegion() {
   filters.province = ''
   filters.school = ''
 }
+function changeProvince() {
+  if (
+    filters.school &&
+    !yearEntries.value.some(
+      (e) =>
+        e.schoolId === filters.school &&
+        (!filters.province || e.province === filters.province),
+    )
+  )
+    filters.school = ''
+}
 const sourcesForYear = computed(() =>
   catalogSources.filter(
-    (s) => s.year === filters.year && matchesRegion(s.province, filters.region),
+    (s) =>
+      s.year === filters.year &&
+      matchesRegion(s.province, filters.region) &&
+      (!filters.province || s.province === filters.province) &&
+      (!filters.school || s.schoolId === filters.school),
   ),
 )
 function excludedDirections(entry: (typeof searchMajors)[number]) {
@@ -41,7 +115,9 @@ const options = computed(() => ({
   province: [...new Set(yearEntries.value.map((e) => e.province))],
   school: [
     ...new Map(
-      yearEntries.value.map((e) => [e.schoolId, e.university]),
+      yearEntries.value
+        .filter((e) => !filters.province || e.province === filters.province)
+        .map((e) => [e.schoolId, e.university]),
     ).entries(),
   ],
   degree: [...new Set(yearEntries.value.map((e) => e.degree).filter(Boolean))],
@@ -93,9 +169,32 @@ watch(
 )
 onMounted(() => {
   restore()
+  try {
+    selections.value = restoreComparisons(
+      window.localStorage.getItem(comparisonStorageKey),
+    )
+  } catch {
+    storageFailed.value = true
+  }
   ready.value = true
   window.addEventListener('popstate', restore)
 })
+watch(
+  selections,
+  () => {
+    if (!ready.value) return
+    try {
+      window.localStorage.setItem(
+        comparisonStorageKey,
+        JSON.stringify({ version: 1, items: selections.value }),
+      )
+      storageFailed.value = false
+    } catch {
+      storageFailed.value = true
+    }
+  },
+  { deep: true },
+)
 onUnmounted(() => window.removeEventListener('popstate', restore))
 </script>
 
@@ -125,10 +224,11 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
           </select></label
         >
         <label class="keyword"
-          >目标专业<input
+          >学校 / 专业 / 方向<input
+            aria-label="学校、学院、专业或方向"
             v-model="filters.keyword"
             type="search"
-            placeholder="专业名称或代码，如机械、0855"
+            placeholder="如：哈尔滨工程大学 仪器、0855"
         /></label>
       </div>
       <div class="topic-filters" role="group" aria-label="工科方向快速筛选">
@@ -162,7 +262,11 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
           </select></label
         >
         <label
-          >省份<select aria-label="省份" v-model="filters.province">
+          >省份<select
+            aria-label="省份"
+            v-model="filters.province"
+            @change="changeProvince"
+          >
             <option value="">全部省份</option>
             <option v-for="p in options.province" :key="p">{{ p }}</option>
           </select></label
@@ -215,6 +319,29 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
       </details>
       <a :href="withBase('/schools/collected')">查看本批核验记录与明确限制 →</a>
     </div>
+    <MajorComparison
+      ref="comparisonPanel"
+      :items="selectedItems"
+      :storage-failed="storageFailed"
+      @remove="removeSelection"
+      @clear="selections = []"
+      @export="downloadCsv(true)"
+    />
+    <div class="result-tools">
+      <p class="muted">
+        可加入最多4项对比，比较初试科目与方向限制。空格分隔关键词可组合搜索。
+      </p>
+      <button type="button" :disabled="!results.length" @click="downloadCsv()">
+        导出当前结果 CSV
+      </button>
+    </div>
+    <p
+      v-if="selections.length >= comparisonLimit"
+      class="restriction"
+      role="status"
+    >
+      已选满4项，请先在对比区移除一项再添加。
+    </p>
     <p class="result-count" role="status" aria-live="polite">
       匹配 <strong>{{ schoolsCount }}</strong> 所院校 ·
       <strong>{{ results.length }}</strong> 个专业项<span
@@ -226,6 +353,7 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
       <p>
         未收录或待更新不等于不可报考。请调整专业名称、代码或筛选条件，并核对官方目录。
       </p>
+      <button type="button" @click="clear">清除其他条件，保留年度与语种</button>
     </div>
     <div v-else class="result-grid" role="table" aria-label="可选院校与专业">
       <div class="result-heading" role="row">
@@ -248,6 +376,17 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
             }}
           </p>
           <p class="muted">计划：{{ entry.plan }}</p>
+          <button
+            type="button"
+            :aria-label="`${isSelected(entry) ? '移出' : '加入'}对比 ${entry.university} ${entry.code} ${entry.college} ${entry.plan}`"
+            :aria-pressed="isSelected(entry)"
+            :disabled="
+              !isSelected(entry) && selections.length >= comparisonLimit
+            "
+            @click="toggleComparison(entry)"
+          >
+            {{ isSelected(entry) ? '已加入对比 · 移出' : '加入对比' }}
+          </button>
         </div>
         <div role="cell">
           <strong
@@ -318,6 +457,14 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
         </div>
       </article>
     </div>
+    <button
+      v-if="selections.length"
+      type="button"
+      class="comparison-jump"
+      @click="comparisonPanel?.show()"
+    >
+      查看对比（{{ selections.length }}/4）↑
+    </button>
   </div>
 </template>
 
@@ -327,6 +474,36 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 16px;
+}
+.result-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 20px 0;
+}
+.result-tools p {
+  margin: 0;
+  flex: 1;
+  min-width: 180px;
+}
+.comparison-jump {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 20;
+  background: var(--vp-c-brand-1);
+  color: var(--vp-c-bg);
+  box-shadow: 0 4px 16px #0002;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button[aria-pressed='true'] {
+  background: var(--vp-c-brand-soft);
+  border-color: var(--vp-c-brand-1);
 }
 .topic-filters button {
   font-size: 13px;
