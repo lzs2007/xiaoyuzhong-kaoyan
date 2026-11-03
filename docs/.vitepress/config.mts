@@ -39,6 +39,7 @@ export default defineConfig({
           text: '院校名录',
           items: [
             { text: '按专业找院校', link: '/schools/find' },
+            { text: '工科采集与核验记录', link: '/schools/collected' },
             { text: '名录总览', link: '/schools/' }
           ]
         },

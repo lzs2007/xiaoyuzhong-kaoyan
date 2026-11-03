@@ -1,5 +1,6 @@
 import { jluMajors, jluMeta } from './jluRussian202.ts'
 import { heuMajors, heuMeta } from './heuRussian202.ts'
+import { collectedEngineering } from './collectedEngineering.ts'
 import { anchorFor } from './majorTypes.ts'
 import type { MajorEntry, SchoolMeta, Degree } from './majorTypes'
 export { anchorFor }
@@ -12,6 +13,9 @@ export interface Direction {
   languages: Language[]
   foreignOriginal: string
   restricted: boolean
+  subjectsOriginal?: string
+  locator?: string
+  countOriginal?: string
 }
 export interface SearchMajor {
   id: string
@@ -36,9 +40,32 @@ export interface SearchMajor {
     collectedAt: string
     locator: string
     status: string
+    attachmentUrl?: string
   }
 }
+export const engineeringTopics = [
+  { id: 'instrument', label: '仪器 / 测控', prefixes: ['0804', '085407'] },
+  { id: 'mechanical', label: '机械 / 车辆', prefixes: ['0802', '0855'] },
+  { id: 'control', label: '控制 / 自动化', prefixes: ['0811', '085406'] },
+  {
+    id: 'electronic',
+    label: '电子 / 通信',
+    prefixes: ['0809', '0810', '085401', '085402', '085403', '085408'],
+  },
+  {
+    id: 'computing',
+    label: '计算机 / 软件',
+    prefixes: ['0812', '0835', '085404', '085405'],
+  },
+  {
+    id: 'materials',
+    label: '材料 / 化工',
+    prefixes: ['0805', '0806', '0817', '0856'],
+  },
+  { id: 'energy', label: '能源 / 动力', prefixes: ['0807', '0858'] },
+]
 export interface SearchFilters {
+  topic: string
   year: string
   language: Language
   keyword: string
@@ -48,6 +75,7 @@ export interface SearchFilters {
   mode: string
 }
 export const defaults: SearchFilters = {
+  topic: '',
   year: '2027',
   language: '202',
   keyword: '',
@@ -62,9 +90,9 @@ export const coverage = [
     name: '吉林大学',
     province: '吉林',
     year: '2027',
-    status: '待更新',
+    status: '部分收录',
     url: 'https://gongkai.jlu.edu.cn/info/1040/14566.htm',
-    note: '已找到2027招生章程及目录公告，专业与方向尚未逐项核验。',
+    note: '电子科学与工程学院4项已核验；其他学院仍待更新。',
   },
   {
     id: 'heu',
@@ -157,6 +185,7 @@ function adapt(
 export const searchMajors = [
   ...adapt(jluMajors, jluMeta, '吉林'),
   ...adapt(heuMajors, heuMeta, '黑龙江'),
+  ...collectedEngineering,
 ]
 export function matchingDirections(entry: SearchMajor, filters: SearchFilters) {
   return entry.directions.filter(
@@ -171,6 +200,12 @@ export function filterMajors(entries: SearchMajor[], filters: SearchFilters) {
     (entry) =>
       entry.verification === 'verified' &&
       entry.year === filters.year &&
+      (!filters.topic ||
+        engineeringTopics
+          .find((t) => t.id === filters.topic)
+          ?.prefixes.some((prefix) => entry.code.startsWith(prefix)) ||
+        (filters.topic === 'instrument' &&
+          entry.college.includes('仪器科学'))) &&
       (!filters.province || entry.province === filters.province) &&
       (!filters.school || entry.schoolId === filters.school) &&
       (!filters.degree || entry.degree === filters.degree) &&
@@ -187,6 +222,8 @@ export function parseFilters(search: string): SearchFilters {
     f.year = params.get('year')!
   if (params.get('language') === '203') f.language = '203'
   f.keyword = (params.get('keyword') || '').trim()
+  if (engineeringTopics.some((t) => t.id === params.get('topic')))
+    f.topic = params.get('topic')!
   const entries = searchMajors.filter((e) => e.year === f.year)
   for (const key of ['province', 'school', 'degree', 'mode'] as const) {
     const value = params.get(key) || ''

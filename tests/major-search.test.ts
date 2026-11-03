@@ -14,12 +14,23 @@ import {
 import type { SearchMajor } from '../docs/.vitepress/data/majorSearch.ts'
 import { jluMajors } from '../docs/.vitepress/data/jluRussian202.ts'
 import { heuMajors } from '../docs/.vitepress/data/heuRussian202.ts'
+import {
+  collectedEngineering,
+  catalogSources,
+} from '../docs/.vitepress/data/collectedEngineering.ts'
 const historical = { ...defaults, year: '2026' }
 
 test('年度隔离：默认2027不能回退使用2026', () => {
-  assert.equal(filterMajors(searchMajors, defaults).length, 0)
+  assert.equal(filterMajors(searchMajors, defaults).length, 124)
+  assert.ok(
+    filterMajors(searchMajors, defaults).every((e) => e.year === '2027'),
+  )
   assert.equal(filterMajors(searchMajors, historical).length, 70)
-  assert.equal(searchMajors.filter((e) => e.schoolId === 'jlu').length, 26)
+  assert.equal(
+    searchMajors.filter((e) => e.schoolId === 'jlu' && e.year === '2026')
+      .length,
+    26,
+  )
   assert.equal(searchMajors.filter((e) => e.schoolId === 'heu').length, 44)
 })
 test('待核实条目不能计入可选结果，即使含语种代码', () => {
@@ -149,7 +160,7 @@ test('分享链接往返、非法参数、默认值与历史恢复', () => {
 })
 test('每条历史结果均有来源、定位、唯一锚点且可定位到旧专业表', () => {
   assert.equal(new Set(searchMajors.map((e) => e.id)).size, searchMajors.length)
-  for (const entry of searchMajors) {
+  for (const entry of searchMajors.filter((e) => e.year === '2026')) {
     assert.ok(entry.source.url.startsWith('https://'))
     assert.ok(entry.source.locator.includes(entry.code))
     assert.equal(entry.source.collectedAt, '2026-09-12')
@@ -172,9 +183,9 @@ test('生产构建保留GitHub Pages子路径和默认年度提示', () => {
     'utf8',
   )
   assert.ok(html.includes('/xiaoyuzhong-kaoyan/'))
-  assert.ok(html.includes('2027 数据待更新'))
+  assert.ok(html.includes('2027 已收录官方目录核验结果'))
   assert.ok(html.includes('未收录或待更新不等于不可报考'))
-  for (const entry of searchMajors) {
+  for (const entry of searchMajors.filter((e) => e.year === '2026')) {
     const detail = readFileSync(
       new URL(
         `../docs/.vitepress/dist/schools/${entry.schoolId}.html`,
@@ -183,5 +194,101 @@ test('生产构建保留GitHub Pages子路径和默认年度提示', () => {
       'utf8',
     )
     assert.ok(detail.includes(`id="${entry.id}"`))
+  }
+})
+
+test('仪器专题覆盖三校并包含仪器学院电子信息，俄日保持独立', () => {
+  const rows = filterMajors(searchMajors, { ...defaults, topic: 'instrument' })
+  assert.equal(rows.length, 5)
+  assert.deepEqual(
+    new Set(rows.map((e) => e.schoolId)),
+    new Set(['hit', 'hrbust', 'bit']),
+  )
+  assert.ok(rows.some((e) => e.schoolId === 'hit' && e.code === '085400'))
+  const japanese = filterMajors(searchMajors, {
+    ...defaults,
+    language: '203',
+    topic: 'instrument',
+  })
+  assert.ok(japanese.length > 0)
+  assert.ok(!japanese.some((e) => e.schoolId === 'hrbust'))
+  assert.deepEqual(parseFilters('?topic=instrument'), {
+    ...defaults,
+    topic: 'instrument',
+  })
+  assert.equal(parseFilters('?topic=unknown').topic, '')
+})
+test('机械不外推：哈理工仅05设计方向、北理工机械203可选而202不可选', () => {
+  const rows = filterMajors(searchMajors, { ...defaults, topic: 'mechanical' })
+  const hrbust = rows.find((e) => e.schoolId === 'hrbust')!
+  assert.equal(matchingDirections(hrbust, defaults).length, 1)
+  assert.ok(matchingDirections(hrbust, defaults)[0].name.startsWith('05'))
+  assert.ok(
+    hrbust.directions.filter((d) => !d.languages.includes('202')).length >= 5,
+  )
+  assert.ok(!rows.some((e) => e.schoolId === 'bit' && e.code === '080200'))
+  assert.ok(
+    filterMajors(searchMajors, {
+      ...defaults,
+      language: '203',
+      keyword: '080200',
+      school: 'bit',
+    }).length > 0,
+  )
+})
+test('哈工大同专业校区限制保持独立，不把威海机械方向推断为可选俄语', () => {
+  const entry = filterMajors(searchMajors, {
+    ...defaults,
+    school: 'hit',
+    keyword: '085500',
+  }).find((e) => e.college.startsWith('002'))!
+  assert.ok(entry)
+  assert.ok(
+    matchingDirections(entry, defaults).every(
+      (d) => !d.name.includes('威海') && !d.name.includes('深圳'),
+    ),
+  )
+  assert.ok(
+    entry.directions.some(
+      (d) => d.name.includes('威海') && !d.languages.includes('202'),
+    ),
+  )
+})
+test('明确不接受202的专业保留核验记录但不进入俄语结果', () => {
+  for (const [school, code] of [
+    ['cust', '080400'],
+    ['lnut', '081200'],
+    ['jlu', '080900'],
+  ]) {
+    const entry = collectedEngineering.find(
+      (e) => e.schoolId === school && e.code === code,
+    )!
+    assert.ok(entry)
+    assert.equal(filterMajors([entry], defaults).length, 0)
+  }
+})
+test('新增来源有官方原件指纹、初试原文、行页定位及可用详情锚点', () => {
+  assert.equal(new Set(catalogSources.map((s) => s.schoolId)).size, 7)
+  const html = readFileSync(
+    new URL('../docs/.vitepress/dist/schools/collected.html', import.meta.url),
+    'utf8',
+  )
+  for (const source of catalogSources) {
+    assert.match(source.sha256, /^[a-f0-9]{64}$/)
+    assert.equal(source.year, '2027')
+    assert.ok(source.assetUrl.startsWith('https://'))
+  }
+  for (const entry of collectedEngineering) {
+    assert.equal(entry.year, '2027')
+    assert.equal(entry.source.collectedAt, '2026-11-03')
+    assert.ok(html.includes(`id="${entry.id}"`))
+    assert.ok(entry.detailUrl.startsWith('/schools/collected#'))
+    assert.ok(
+      entry.directions.every(
+        (d) => d.locator && d.subjectsOriginal && d.foreignOriginal,
+      ),
+    )
+    for (const d of entry.directions)
+      assert.deepEqual(d.languages, languagesFromOriginal(d.foreignOriginal))
   }
 })

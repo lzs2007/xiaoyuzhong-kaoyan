@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { withBase } from 'vitepress'
 import {
   coverage,
+  engineeringTopics,
   defaults,
   filterMajors,
   matchingDirections,
@@ -10,8 +11,15 @@ import {
   searchMajors,
   serializeFilters,
 } from '../../data/majorSearch'
+import { catalogSources } from '../../data/collectedEngineering'
 const filters = reactive({ ...defaults })
 const ready = ref(false)
+const sourcesForYear = computed(() =>
+  catalogSources.filter((s) => s.year === filters.year),
+)
+function excludedDirections(entry: (typeof searchMajors)[number]) {
+  return entry.directions.filter((d) => !d.languages.includes(filters.language))
+}
 const yearEntries = computed(() =>
   searchMajors.filter((e) => e.year === filters.year),
 )
@@ -109,6 +117,24 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
             placeholder="专业名称或代码，如机械、0855"
         /></label>
       </div>
+      <div class="topic-filters" role="group" aria-label="工科方向快速筛选">
+        <button
+          type="button"
+          :aria-pressed="filters.topic === ''"
+          @click="filters.topic = ''"
+        >
+          全部工科
+        </button>
+        <button
+          v-for="topic in engineeringTopics"
+          :key="topic.id"
+          type="button"
+          :aria-pressed="filters.topic === topic.id"
+          @click="filters.topic = topic.id"
+        >
+          {{ topic.label }}
+        </button>
+      </div>
       <div class="secondary-filters">
         <label
           >省份<select aria-label="省份" v-model="filters.province">
@@ -144,22 +170,30 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
       不代表2027报考资格。专业数据沿用2026-09-12官方目录整理记录。
     </div>
     <div v-else class="notice" role="note">
-      <strong>2027 数据待更新</strong> ·
-      两校专业与方向尚未完成逐项核验，暂不计入匹配结果。
-      <ul>
-        <li v-for="school in coverage" :key="school.id">
+      <strong>{{ filters.year }} 已收录官方目录核验结果</strong> ·
+      逐学院、专业及方向收录，尚非全国完整名单。未收录或待更新不等于不可报考。
+      <details>
+        <summary>查看采集来源、覆盖范围与待更新学校</summary>
+        <ul>
+          <li v-for="source in sourcesForYear" :key="source.id">
+            <a :href="source.url" target="_blank" rel="noopener noreferrer"
+              >{{ source.university }} · {{ source.year }}</a
+            >：{{ source.scope }}
+          </li>
+        </ul>
+        <p v-for="school in coverage" :key="school.id">
           {{ school.name }}：{{ school.note }}
           <a :href="school.url" target="_blank" rel="noopener noreferrer"
-            >官方目录入口 ↗</a
+            >官方入口 ↗</a
           >
-        </li>
-      </ul>
-      <button type="button" @click="historical">切换到2026历史数据</button>
+        </p>
+      </details>
+      <a :href="withBase('/schools/collected')">查看本批核验记录与明确限制 →</a>
     </div>
     <p class="result-count" role="status" aria-live="polite">
       匹配 <strong>{{ schoolsCount }}</strong> 所院校 ·
       <strong>{{ results.length }}</strong> 个专业项<span
-        >首批仅收录吉大、哈工程工学专业，非全国完整名单。</span
+        >按招生年度与当前语种匹配；不同学院、学习方式分别计项。</span
       >
     </p>
     <div v-if="!results.length" class="empty">
@@ -206,11 +240,8 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
               >
             </li>
           </ul>
-          <p
-            v-if="entry.directions.some((d) => d.restricted)"
-            class="restriction"
-          >
-            注意：同一专业含仅英语方向，不能按整个专业报考。
+          <p v-if="excludedDirections(entry).length" class="restriction">
+            注意：同一专业部分方向不接受当前语种，不能按整个专业报考。
           </p>
           <p v-if="entry.plan.includes('专项')" class="restriction">
             仅限符合该专项资格的考生。
@@ -226,20 +257,28 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
             </p>
             <p>
               外国语原文：{{
-                entry.directions.find((d) => !d.restricted)?.foreignOriginal
+                matchingDirections(entry, filters)
+                  .map((d) => d.foreignOriginal)
+                  .filter((v, i, a) => a.indexOf(v) === i)
+                  .join('；')
               }}
             </p>
-            <template v-if="entry.directions.some((d) => d.restricted)"
-              ><strong>仅英语方向</strong>
+            <template v-if="excludedDirections(entry).length"
+              ><strong>不接受当前语种的方向</strong>
               <ul>
-                <li
-                  v-for="d in entry.directions.filter((d) => d.restricted)"
-                  :key="d.name"
-                >
+                <li v-for="d in excludedDirections(entry)" :key="d.name">
                   {{ d.name }} · {{ d.foreignOriginal }}
                 </li>
               </ul></template
             >
+            <p v-if="entry.source.attachmentUrl">
+              <a
+                :href="entry.source.attachmentUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                >查看官方原件 ↗</a
+              >
+            </p>
             <p v-if="entry.count">目录人数：{{ entry.count }}</p>
             <p>{{ entry.countBasis }}</p>
             <p>原目录定位：{{ entry.source.locator }}</p>
@@ -258,6 +297,21 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
 </template>
 
 <style scoped>
+.topic-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.topic-filters button {
+  font-size: 13px;
+  padding: 6px 10px;
+}
+.topic-filters button[aria-pressed='true'] {
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+  font-weight: 600;
+}
 .search-panel {
   padding: 20px;
   border: 1px solid var(--vp-c-divider);
