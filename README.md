@@ -22,7 +22,7 @@
 |---|---|
 | [俄语202专区](https://lzs2007.github.io/xiaoyuzhong-kaoyan/russian-202/) | 考试性质与科目代码、大纲摘要、题型分值、报名与考试时间、国家线与自划线、调剂、参考书目、FAQ |
 | [日语203专区](https://lzs2007.github.io/xiaoyuzhong-kaoyan/japanese-203/) | 科目性质、题型分值、报名时间线、国家线，以及与俄语202的差异对比 |
-| [按专业找院校](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/find) | 首批两校70个工学专业项，支持年度、语种、专业名称或代码与方向学习方式筛选；2027待更新，2026历史可查 |
+| [按专业找院校](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/find) | 2027已核验7校124个可选202俄语专业项，支持工科方向快捷筛选与来源定位；保留2026历史数据 |
 | [院校名录](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/) | 逐校核实“哪些院校的哪些专业接受 202 / 203”，附官方目录来源与原文摘录；支持按省份、语种可选性、核实状态筛选 |
 | 单校深度拆解 | 对重点院校按官方专业目录**逐专业、逐研究方向**列出可选语种与招生人数。已上线 [吉林大学 · 俄语202可报考专业](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/jlu)（116 个专业条目）、[哈尔滨工程大学 · 俄语202可报考专业](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/heu)（64 个专业 / 134 个可考方向，含 29 个"仅英语"专项方向提示） |
 | [政策公告](https://lzs2007.github.io/xiaoyuzhong-kaoyan/news/) | 教育部、研招网等官方渠道的招生政策与公告，标注来源与适用年份 |
@@ -102,3 +102,17 @@ docs/
 2027数据状态与核验记录见 [专业查询数据维护说明](docs/major-search-maintenance.md)。新增年度必须录入该年度官方依据及方向信息，不得复制旧年度结论。旧详情页的定位锚点按学院、专业原文与计划生成，重排数组不会改变链接；修改条目身份字段时应保留旧锚点重定向。
 
 验证：使用 Node.js 22.18+，执行 `npm ci`、`npm run docs:build`、`npm test`。测试涵盖年度隔离、语种独立、方向限制、专项、组合筛选、分享参数与生产详情锚点。
+
+## 官方目录搜集工具
+
+2027新批次来源：哈工大、哈理工、北理工、辽宁工业大学、辽宁科技大学、长春理工、吉林大学（电子学院部分）。共核验201个专业项，其中124项至少有一个方向接受202俄语，其他明确限制保留在采集记录页。此处专业项按学院和学习方式分别计数，不是唯一专业代码数。2026旧数据仍独立保留。
+
+```bash
+python3 -m pip install -r scripts/requirements-catalogs.txt
+npm run collect:catalogs -- --list
+npm run collect:catalogs -- --source hrbust-2027 --source bit-2027
+```
+
+工具按 `docs/.vitepress/data/catalogSources.json` 抓取官方HTML、PDF、XLS或图片，将原件、SHA-256、202候选上下文和错误记录保存到忽略目录 `.cache/catalog-collection/`。候选始终为待核实，不直接写入已发布查询库；验证码、解析失败及零候选均不解释为不可报考。图片须人工阅读核验。
+
+复核后将结构化方向录入 `reviewedPrograms.ts`，每方向保留外国语原文、初试科目、人数口径与行/页定位，再运行构建和测试。来源指纹变化仅提示需复核，HTML计数器变化也可能造成指纹不同。
