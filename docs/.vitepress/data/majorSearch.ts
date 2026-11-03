@@ -180,7 +180,10 @@ export const searchMajors = [
   ...adapt(heuMajors, heuMeta, '黑龙江'),
   ...collectedEngineering,
 ]
-export function matchingDirections(entry: SearchMajor, filters: SearchFilters) {
+export function matchingDirections(
+  entry: SearchMajor,
+  filters: Pick<SearchFilters, 'language' | 'mode'>,
+) {
   return entry.directions.filter(
     (d) =>
       d.languages.includes(filters.language) &&
@@ -188,7 +191,12 @@ export function matchingDirections(entry: SearchMajor, filters: SearchFilters) {
   )
 }
 export function filterMajors(entries: SearchMajor[], filters: SearchFilters) {
-  const keyword = filters.keyword.trim().toUpperCase()
+  const keywords = filters.keyword
+    .trim()
+    .normalize('NFKC')
+    .toUpperCase()
+    .split(/\s+/)
+    .filter(Boolean)
   return entries.filter(
     (entry) =>
       entry.verification === 'verified' &&
@@ -203,9 +211,19 @@ export function filterMajors(entries: SearchMajor[], filters: SearchFilters) {
       (!filters.province || entry.province === filters.province) &&
       (!filters.school || entry.schoolId === filters.school) &&
       (!filters.degree || entry.degree === filters.degree) &&
-      (!keyword ||
-        entry.code.startsWith(keyword) ||
-        entry.name.toUpperCase().includes(keyword)) &&
+      keywords.every((keyword) =>
+        [
+          entry.code,
+          entry.name,
+          entry.university,
+          entry.college,
+          ...matchingDirections(entry, filters).map((d) => d.name),
+        ]
+          .join(' ')
+          .normalize('NFKC')
+          .toUpperCase()
+          .includes(keyword),
+      ) &&
       matchingDirections(entry, filters).length > 0,
   )
 }
@@ -229,7 +247,9 @@ export function parseFilters(search: string): SearchFilters {
       key === 'mode'
         ? entries.some((e) => e.directions.some((d) => d.mode === value))
         : entries.some(
-            (e) => (key === 'school' ? e.schoolId : e[key]) === value,
+            (e) =>
+              (key === 'school' ? e.schoolId : e[key]) === value &&
+              (key !== 'school' || !f.province || e.province === f.province),
           )
     if (valid) f[key] = value
   }

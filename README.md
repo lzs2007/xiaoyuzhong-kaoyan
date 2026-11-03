@@ -22,7 +22,7 @@
 |---|---|
 | [俄语202专区](https://lzs2007.github.io/xiaoyuzhong-kaoyan/russian-202/) | 考试性质与科目代码、大纲摘要、题型分值、报名与考试时间、国家线与自划线、调剂、参考书目、FAQ |
 | [日语203专区](https://lzs2007.github.io/xiaoyuzhong-kaoyan/japanese-203/) | 科目性质、题型分值、报名时间线、国家线，以及与俄语202的差异对比 |
-| [按专业找院校](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/find) | 2027已核验13校226个可选202俄语专业项，支持东北三省筛选，支持工科方向快捷筛选与来源定位；保留2026历史数据 |
+| [按专业找院校](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/find) | 2027已核验13校226个可选202俄语专业项，支持东北三省筛选、组合搜索、4项选校对比、含来源的CSV导出；保留2026历史数据 |
 | [院校名录](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/) | 逐校核实“哪些院校的哪些专业接受 202 / 203”，附官方目录来源与原文摘录；支持按省份、语种可选性、核实状态筛选 |
 | 单校深度拆解 | 对重点院校按官方专业目录**逐专业、逐研究方向**列出可选语种与招生人数。已上线 [吉林大学 · 俄语202可报考专业](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/jlu)（116 个专业条目）、[哈尔滨工程大学 · 俄语202可报考专业](https://lzs2007.github.io/xiaoyuzhong-kaoyan/schools/heu)（64 个专业 / 134 个可考方向，含 29 个"仅英语"专项方向提示） |
 | [政策公告](https://lzs2007.github.io/xiaoyuzhong-kaoyan/news/) | 教育部、研招网等官方渠道的招生政策与公告，标注来源与适用年份 |

@@ -47,7 +47,18 @@ test('待核实条目不能计入可选结果，即使含语种代码', () => {
 test('专业名称去空格、代码前缀和自设专业代码', () => {
   const a = filterMajors(searchMajors, { ...historical, keyword: ' 机械 ' })
   assert.ok(a.length > 0)
-  assert.ok(a.every((e) => e.name.includes('机械')))
+  assert.ok(
+    a.every((e) =>
+      [
+        e.name,
+        e.university,
+        e.college,
+        ...matchingDirections(e, historical).map((d) => d.name),
+      ]
+        .join(' ')
+        .includes('机械'),
+    ),
+  )
   assert.ok(
     filterMajors(searchMajors, { ...historical, keyword: '0855' }).every((e) =>
       e.code.startsWith('0855'),
