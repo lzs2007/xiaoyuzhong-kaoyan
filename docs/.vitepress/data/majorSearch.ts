@@ -1,3 +1,4 @@
+import reviewQueue from './catalogReviewQueue.json' with { type: 'json' }
 import { jluMajors, jluMeta } from './jluRussian202.ts'
 import { heuMajors, heuMeta } from './heuRussian202.ts'
 import { collectedEngineering } from './collectedEngineering.ts'
@@ -64,7 +65,17 @@ export const engineeringTopics = [
   },
   { id: 'energy', label: '能源 / 动力', prefixes: ['0807', '0858'] },
 ]
+export const northeastProvinces = ['黑龙江', '吉林', '辽宁']
+export function matchesRegion(province: string, region: string) {
+  return (
+    !region ||
+    (region === 'northeast'
+      ? northeastProvinces.includes(province)
+      : region === 'other' && !northeastProvinces.includes(province))
+  )
+}
 export interface SearchFilters {
+  region: string
   topic: string
   year: string
   language: Language
@@ -75,6 +86,7 @@ export interface SearchFilters {
   mode: string
 }
 export const defaults: SearchFilters = {
+  region: '',
   topic: '',
   year: '2027',
   language: '202',
@@ -84,26 +96,7 @@ export const defaults: SearchFilters = {
   degree: '',
   mode: '',
 }
-export const coverage = [
-  {
-    id: 'jlu',
-    name: '吉林大学',
-    province: '吉林',
-    year: '2027',
-    status: '部分收录',
-    url: 'https://gongkai.jlu.edu.cn/info/1040/14566.htm',
-    note: '电子科学与工程学院4项已核验；其他学院仍待更新。',
-  },
-  {
-    id: 'heu',
-    name: '哈尔滨工程大学',
-    province: '黑龙江',
-    year: '2027',
-    status: '待更新',
-    url: 'https://yzb.hrbeu.edu.cn/3277/list.htm',
-    note: '2027专业及方向尚未完成核验，请查看官方目录栏目。',
-  },
-]
+export const coverage = reviewQueue
 function studyMode(text: string): StudyMode {
   if (text.includes('非全日制')) return '非全日制'
   if (text.includes('全日制')) return '全日制'
@@ -200,6 +193,7 @@ export function filterMajors(entries: SearchMajor[], filters: SearchFilters) {
     (entry) =>
       entry.verification === 'verified' &&
       entry.year === filters.year &&
+      matchesRegion(entry.province, filters.region) &&
       (!filters.topic ||
         engineeringTopics
           .find((t) => t.id === filters.topic)
@@ -224,7 +218,11 @@ export function parseFilters(search: string): SearchFilters {
   f.keyword = (params.get('keyword') || '').trim()
   if (engineeringTopics.some((t) => t.id === params.get('topic')))
     f.topic = params.get('topic')!
-  const entries = searchMajors.filter((e) => e.year === f.year)
+  if (['northeast', 'other'].includes(params.get('region') || ''))
+    f.region = params.get('region')!
+  const entries = searchMajors.filter(
+    (e) => e.year === f.year && matchesRegion(e.province, f.region),
+  )
   for (const key of ['province', 'school', 'degree', 'mode'] as const) {
     const value = params.get(key) || ''
     const valid =

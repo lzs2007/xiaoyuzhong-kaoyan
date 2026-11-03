@@ -1,0 +1,101 @@
+[
+  {
+    "id": "jlu",
+    "name": "吉林大学",
+    "province": "吉林",
+    "year": "2027",
+    "status": "部分收录",
+    "url": "https://yzb.jlu.edu.cn/info/1047/3678.htm",
+    "note": "电子科学与工程学院已收录；全校2027目录附件返回验证页面，其他学院待复核。"
+  },
+  {
+    "id": "sut",
+    "name": "沈阳工业大学",
+    "province": "辽宁",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://yjsxy.sut.edu.cn/info/1311/10911.htm",
+    "note": "已找到正式简章，专业目录附件返回验证页面，未生成2027可选结论。"
+  },
+  {
+    "id": "sylu",
+    "name": "沈阳理工大学",
+    "province": "辽宁",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://yanjiusheng.sylu.edu.cn/",
+    "note": "官网本次访问返回503，尚未取得可核验的2027完整目录。"
+  },
+  {
+    "id": "nepu",
+    "name": "东北石油大学",
+    "province": "黑龙江",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://yjsb.nepu.edu.cn/info/1099/5917.htm",
+    "note": "已找到2027正式章程，目录附件返回验证页面，尚未核验专业外国语。"
+  },
+  {
+    "id": "nefu",
+    "name": "东北林业大学",
+    "province": "黑龙江",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://yz.nefu.edu.cn/info/1026/4636.htm",
+    "note": "已找到2027正式目录发布页及学院分册，完整附件本次返回验证页面。"
+  },
+  {
+    "id": "neau",
+    "name": "东北农业大学",
+    "province": "黑龙江",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://yjs.neau.edu.cn/info/1012/4573.htm",
+    "note": "已找到2027正式章程和XLS目录入口，附件返回验证页面。"
+  },
+  {
+    "id": "ccut",
+    "name": "长春工业大学",
+    "province": "吉林",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://yjsy.ccut.edu.cn/info/1141/3476.htm",
+    "note": "已找到2027章程和DOC目录入口，尚未完成专业与方向外国语核验。"
+  },
+  {
+    "id": "lntu",
+    "name": "辽宁工程技术大学",
+    "province": "辽宁",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://yjsy.lntu.edu.cn/info/1132/4498.htm",
+    "note": "已找到全日制及非全日制XLSX目录，附件本次返回403，未取得原件。"
+  },
+  {
+    "id": "dlu",
+    "name": "大连大学",
+    "province": "辽宁",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://yjs.dlu.edu.cn/",
+    "note": "官网本次访问返回503，尚未取得可核验的2027专业目录。"
+  },
+  {
+    "id": "jlju",
+    "name": "吉林建筑大学",
+    "province": "吉林",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://yjs.jlju.edu.cn/info/1037/6382.htm",
+    "note": "已找到2027招生简章附件入口，尚未取得可核验的完整专业外国语信息。"
+  },
+  {
+    "id": "syu",
+    "name": "沈阳大学",
+    "province": "辽宁",
+    "year": "2027",
+    "status": "待核验",
+    "url": "https://www.syu.edu.cn/info/1042/15410.htm",
+    "note": "已找到2027正式章程链接，官网本次访问返回403，未取得目录原件。"
+  }
+]

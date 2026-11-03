@@ -7,6 +7,7 @@ import {
   defaults,
   filterMajors,
   matchingDirections,
+  matchesRegion,
   parseFilters,
   searchMajors,
   serializeFilters,
@@ -14,14 +15,27 @@ import {
 import { catalogSources } from '../../data/collectedEngineering'
 const filters = reactive({ ...defaults })
 const ready = ref(false)
+const pendingSchools = computed(() =>
+  coverage.filter(
+    (s) => s.year === filters.year && matchesRegion(s.province, filters.region),
+  ),
+)
+function changeRegion() {
+  filters.province = ''
+  filters.school = ''
+}
 const sourcesForYear = computed(() =>
-  catalogSources.filter((s) => s.year === filters.year),
+  catalogSources.filter(
+    (s) => s.year === filters.year && matchesRegion(s.province, filters.region),
+  ),
 )
 function excludedDirections(entry: (typeof searchMajors)[number]) {
   return entry.directions.filter((d) => !d.languages.includes(filters.language))
 }
 const yearEntries = computed(() =>
-  searchMajors.filter((e) => e.year === filters.year),
+  searchMajors.filter(
+    (e) => e.year === filters.year && matchesRegion(e.province, filters.region),
+  ),
 )
 const options = computed(() => ({
   province: [...new Set(yearEntries.value.map((e) => e.province))],
@@ -137,6 +151,17 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
       </div>
       <div class="secondary-filters">
         <label
+          >地区范围<select
+            aria-label="地区范围"
+            v-model="filters.region"
+            @change="changeRegion"
+          >
+            <option value="">全部地区</option>
+            <option value="northeast">东北三省</option>
+            <option value="other">东北以外</option>
+          </select></label
+        >
+        <label
           >省份<select aria-label="省份" v-model="filters.province">
             <option value="">全部省份</option>
             <option v-for="p in options.province" :key="p">{{ p }}</option>
@@ -181,7 +206,7 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
             >：{{ source.scope }}
           </li>
         </ul>
-        <p v-for="school in coverage" :key="school.id">
+        <p v-for="school in pendingSchools" :key="school.id">
           {{ school.name }}：{{ school.note }}
           <a :href="school.url" target="_blank" rel="noopener noreferrer"
             >官方入口 ↗</a
