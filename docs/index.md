@@ -7,13 +7,16 @@ hero:
   tagline: 非官方信息整理站——全部关键信息标注来源，以研招网及招生单位当年官方公告为准
   actions:
     - theme: brand
-      text: 进入俄语202专区
-      link: /russian-202/
+      text: 按专业找院校
+      link: /schools/find
     - theme: alt
       text: 进入日语203专区
       link: /japanese-203/
 
 features:
+  - title: 按专业找院校
+    details: 工科优先，按专业名称或代码查询202俄语、203日语可选院校与方向。2027待更新，2026历史数据可查。
+    link: /schools/find
   - title: 俄语202专区
     details: 考试性质、科目代码、题型分值、大纲摘要、报名与考试时间、国家线与调剂、参考书目、常见问题
     link: /russian-202/
