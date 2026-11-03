@@ -21,7 +21,7 @@ import {
 const historical = { ...defaults, year: '2026' }
 
 test('年度隔离：默认2027不能回退使用2026', () => {
-  assert.equal(filterMajors(searchMajors, defaults).length, 124)
+  assert.equal(filterMajors(searchMajors, defaults).length, 226)
   assert.ok(
     filterMajors(searchMajors, defaults).every((e) => e.year === '2027'),
   )
@@ -31,7 +31,11 @@ test('年度隔离：默认2027不能回退使用2026', () => {
       .length,
     26,
   )
-  assert.equal(searchMajors.filter((e) => e.schoolId === 'heu').length, 44)
+  assert.equal(
+    searchMajors.filter((e) => e.schoolId === 'heu' && e.year === '2026')
+      .length,
+    44,
+  )
 })
 test('待核实条目不能计入可选结果，即使含语种代码', () => {
   assert.equal(
@@ -197,12 +201,12 @@ test('生产构建保留GitHub Pages子路径和默认年度提示', () => {
   }
 })
 
-test('仪器专题覆盖三校并包含仪器学院电子信息，俄日保持独立', () => {
+test('仪器专题覆盖四校并包含仪器学院电子信息，俄日保持独立', () => {
   const rows = filterMajors(searchMajors, { ...defaults, topic: 'instrument' })
-  assert.equal(rows.length, 5)
+  assert.equal(rows.length, 7)
   assert.deepEqual(
     new Set(rows.map((e) => e.schoolId)),
-    new Set(['hit', 'hrbust', 'bit']),
+    new Set(['hit', 'hrbust', 'bit', 'heu']),
   )
   assert.ok(rows.some((e) => e.schoolId === 'hit' && e.code === '085400'))
   const japanese = filterMajors(searchMajors, {
@@ -268,7 +272,7 @@ test('明确不接受202的专业保留核验记录但不进入俄语结果', ()
   }
 })
 test('新增来源有官方原件指纹、初试原文、行页定位及可用详情锚点', () => {
-  assert.equal(new Set(catalogSources.map((s) => s.schoolId)).size, 7)
+  assert.equal(new Set(catalogSources.map((s) => s.schoolId)).size, 13)
   const html = readFileSync(
     new URL('../docs/.vitepress/dist/schools/collected.html', import.meta.url),
     'utf8',
@@ -291,4 +295,149 @@ test('新增来源有官方原件指纹、初试原文、行页定位及可用�
     for (const d of entry.directions)
       assert.deepEqual(d.languages, languagesFromOriginal(d.foreignOriginal))
   }
+})
+
+test('东北三省筛选与省外互斥并覆盖本批新增院校', () => {
+  const northeast = filterMajors(searchMajors, {
+    ...defaults,
+    region: 'northeast',
+  })
+  const other = filterMajors(searchMajors, { ...defaults, region: 'other' })
+  assert.equal(northeast.length, 216)
+  assert.equal(new Set(northeast.map((e) => e.schoolId)).size, 10)
+  assert.ok(
+    northeast.every((e) => ['黑龙江', '吉林', '辽宁'].includes(e.province)),
+  )
+  assert.ok(
+    other.every((e) => !['黑龙江', '吉林', '辽宁'].includes(e.province)),
+  )
+  assert.equal(
+    northeast.length + other.length,
+    filterMajors(searchMajors, defaults).length,
+  )
+  const query = {
+    ...defaults,
+    region: 'northeast',
+    topic: 'mechanical',
+    school: 'lnpu',
+  }
+  assert.deepEqual(parseFilters(serializeFilters(query)), query)
+  assert.equal(parseFilters('?region=unknown').region, '')
+  assert.equal(parseFilters('?region=northeast&school=bit').school, '')
+})
+test('新增六校都有2027原件依据，旧2026数据不替代新年', () => {
+  for (const [school, count] of [
+    ['heu', 60],
+    ['usth', 18],
+    ['lnpu', 15],
+    ['neu', 3],
+    ['ustb', 3],
+    ['cup', 3],
+  ] as const) {
+    const rows = filterMajors(searchMajors, { ...defaults, school })
+    assert.equal(rows.length, count)
+    assert.ok(
+      rows.every(
+        (e) =>
+          e.year === '2027' &&
+          e.source.attachmentUrl &&
+          e.directions.every((d) => d.locator),
+      ),
+    )
+  }
+})
+test('哈工程2027方向重新核验：海南土木水利可选俄语，青岛仍仅英语', () => {
+  const entry = collectedEngineering.find(
+    (e) =>
+      e.schoolId === 'heu' &&
+      e.college.startsWith('001') &&
+      e.code === '085900' &&
+      e.plan === '全日制',
+  )!
+  assert.ok(entry)
+  assert.ok(
+    entry.directions
+      .find((d) => d.name.includes('海南'))!
+      .languages.includes('202'),
+  )
+  assert.ok(
+    !entry.directions
+      .find((d) => d.name.includes('青岛'))!
+      .languages.includes('202'),
+  )
+  assert.ok(entry.directions.every((d) => d.mode === '全日制'))
+  const partTime = collectedEngineering.find(
+    (e) =>
+      e.schoolId === 'heu' &&
+      e.college.startsWith('001') &&
+      e.code === '085900' &&
+      e.plan === '非全日制',
+  )!
+  assert.equal(partTime.directions.length, 1)
+  assert.ok(partTime.directions[0].name.startsWith('F1'))
+})
+test('东北大学冶金可选202，不向机械、控制或计算机外推', () => {
+  const rows = filterMajors(searchMajors, { ...defaults, school: 'neu' })
+  assert.ok(
+    rows.every(
+      (e) =>
+        e.college.includes('冶金学院') && ['080600', '085603'].includes(e.code),
+    ),
+  )
+  for (const code of ['080200', '081100', '081200']) {
+    const entries = collectedEngineering.filter(
+      (e) => e.schoolId === 'neu' && e.code === code,
+    )
+    assert.ok(entries.length > 0)
+    assert.equal(filterMajors(entries, defaults).length, 0)
+  }
+})
+test('黑科大俄语选项不推断为日语，辽宁石化同名专业保留学院差异', () => {
+  assert.equal(
+    filterMajors(searchMajors, { ...defaults, school: 'usth', language: '203' })
+      .length,
+    0,
+  )
+  assert.ok(
+    filterMajors(searchMajors, {
+      ...defaults,
+      school: 'lnpu',
+      keyword: '080200',
+    }).length > 0,
+  )
+  const chemistry = collectedEngineering.find(
+    (e) => e.schoolId === 'lnpu' && e.code === '081700',
+  )!
+  assert.equal(filterMajors([chemistry], defaults).length, 0)
+})
+test('省外专业不跨学院推断：北科力学按方向，中石油地质资源按学院', () => {
+  const ustb = filterMajors(searchMajors, {
+    ...defaults,
+    school: 'ustb',
+    keyword: '080100',
+  })[0]
+  assert.equal(matchingDirections(ustb, defaults).length, 1)
+  assert.ok(matchingDirections(ustb, defaults)[0].name.includes('工程力学'))
+  assert.ok(
+    !ustb.directions
+      .find((d) => d.name.includes('流体力学'))!
+      .languages.includes('202'),
+  )
+  const cup = collectedEngineering.filter(
+    (e) => e.schoolId === 'cup' && e.code === '081800',
+  )
+  assert.ok(
+    cup.some(
+      (e) =>
+        e.college.includes('地球科学') &&
+        filterMajors([e], defaults).length === 1,
+    ),
+  )
+  assert.ok(
+    cup.some(
+      (e) =>
+        e.college.includes('地球物理') &&
+        filterMajors([e], defaults).length === 0,
+    ),
+  )
 })

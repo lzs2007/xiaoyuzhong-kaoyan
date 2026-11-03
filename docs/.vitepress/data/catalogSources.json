@@ -102,5 +102,83 @@
     "collectedAt": "2026-11-03",
     "sha256": "38ae11d30f82fcf1bd1de532e64a42e01cd190437dc8568c3ecb0e7126b3d909",
     "scope": "光电工程学院目录第3页：光学、仪器及对应专硕。四项均仅英语。"
+  },
+  {
+    "id": "heu-2027",
+    "schoolId": "heu",
+    "university": "哈尔滨工程大学",
+    "province": "黑龙江",
+    "year": "2027",
+    "url": "https://yzb.hrbeu.edu.cn/2026/0929/c3262a352656/page.htm",
+    "assetUrl": "https://yzb.hrbeu.edu.cn/_upload/article/files/55/1a/06c933ef4ac9b8aa1372c53501a5/a26798bf-5848-4aae-a3e4-8804c8a8b2b1.pdf",
+    "format": "pdf",
+    "collectedAt": "2026-11-03",
+    "sha256": "a0c87aa74a30df029bbc94a8b35614b90b5abd1c610180efeb0cb40f8cab998a",
+    "scope": "32页正式统考目录所列工学专业，按方向分别核对外国语；不含另列的单独考试目录。"
+  },
+  {
+    "id": "usth-2027",
+    "schoolId": "usth",
+    "university": "黑龙江科技大学",
+    "province": "黑龙江",
+    "year": "2027",
+    "url": "https://gs.usth.edu.cn/info/1016/1237.htm",
+    "assetUrl": "https://gs.usth.edu.cn/__local/3/38/AB/178E2EE6A290F429B73718DF21B_7E15E044_35701.pdf",
+    "format": "pdf",
+    "collectedAt": "2026-11-03",
+    "sha256": "4626c0297dadbf3f0748f787c1221deece35599a0f451ac13a451feb69aa4aa4",
+    "scope": "官方目录第1—11页的工学学硕、全日制及非全日制专硕；第12页工程师学院联合培养清单未独立用于判定语种。"
+  },
+  {
+    "id": "lnpu-2027",
+    "schoolId": "lnpu",
+    "university": "辽宁石油化工大学",
+    "province": "辽宁",
+    "year": "2027",
+    "url": "https://ges.lnpu.edu.cn/info/1063/8322.htm",
+    "assetUrl": "https://ges.lnpu.edu.cn/__local/9/2B/91/AAA477215FA34D4AA049839A307_96574A1A_14663.pdf",
+    "format": "pdf",
+    "collectedAt": "2026-11-03",
+    "sha256": "1791f7941958895055f1f756cb870619612376a8557e7dbd3f3ea5aeb81fea2f",
+    "scope": "官方3页招生目录所列工学专业；学院、方向、学习方式和外国语分别核验。非工学俄语笔译不作为202依据。"
+  },
+  {
+    "id": "neu-2027",
+    "schoolId": "neu",
+    "university": "东北大学",
+    "province": "辽宁",
+    "year": "2027",
+    "url": "https://yz.neu.edu.cn/2026/0930/c5933a480171/pagem.htm",
+    "assetUrl": "https://yz.neu.edu.cn/2026/0930/c5933a480171/pagem.htm",
+    "format": "html",
+    "collectedAt": "2026-11-03",
+    "sha256": "699aefce57205ced69bd60f0850156259f2180661bd23ab041254837aca62e2e",
+    "scope": "含考试科目的官方HTML目录中全部工学条目；202俄语可选集中于本次已核验的冶金学院专业，不外推到其他学院。"
+  },
+  {
+    "id": "ustb-full-2027",
+    "schoolId": "ustb",
+    "university": "北京科技大学",
+    "province": "北京",
+    "year": "2027",
+    "url": "https://yzxc.ustb.edu.cn/sssbkzn/sszszc/0e002943b7cb436b9c99be25ba066f3f.htm",
+    "assetUrl": "https://yzxc.ustb.edu.cn/docs/2026-10/ec8d33a8cae54194b458540127cdabc4.xlsx",
+    "format": "xlsx",
+    "collectedAt": "2026-11-03",
+    "sha256": "f1599f9f24a118223386a4a7d531804fbcb85e67b3bfff1059404e8a36d73090",
+    "scope": "部分收录：含202的工学专业，以及仪器、机械、控制重点核验项；仅全日制附件1，不含单独考试及其他专项附件。"
+  },
+  {
+    "id": "cup-academic-2027",
+    "schoolId": "cup",
+    "university": "中国石油大学（北京）",
+    "province": "北京",
+    "year": "2027",
+    "url": "https://grs.cup.edu.cn/zsssjzml/91484.jhtml",
+    "assetUrl": "https://grs.cup.edu.cn/wenku/www/202609/24205220olz0.pdf",
+    "format": "pdf",
+    "collectedAt": "2026-11-03",
+    "sha256": "efe33dc7ecd25850905df02ed1891994a69a8f3d5fd50ca8409ef8f5c3d706be",
+    "scope": "官方2027全日制学术学位目录中工学条目；不含专硕、非全日制、单独考试及其他校区目录。"
   }
 ]
