@@ -1,15 +1,31 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { anchorFor } from '../../data/majorTypes'
 import type { MajorEntry } from '../../data/majorTypes'
 
 const props = withDefaults(
   defineProps<{
     majors: MajorEntry[]
+    schoolId?: string
     /** 结果区默认折叠的学院数量阈值（超出后自动折叠） */
     collapseAfter?: number
   }>(),
   { collapseAfter: 999 }
 )
+
+const targetId = ref('')
+function rowId(m: MajorEntry) { return props.schoolId ? anchorFor(props.schoolId, m) : undefined }
+async function revealHash() {
+  targetId.value = window.location.hash.slice(1)
+  if (!props.schoolId || !window.location.hash.startsWith(`#major-${props.schoolId}-`)) return
+  reset(); collapsed.value = false
+  await nextTick()
+  const target = document.getElementById(targetId.value)
+  target?.scrollIntoView({ block: 'center' })
+  target?.focus({ preventScroll: true })
+}
+onMounted(() => { revealHash(); window.addEventListener('hashchange', revealHash) })
+onUnmounted(() => window.removeEventListener('hashchange', revealHash))
 
 const keyword = ref('')
 const plan = ref('全部')
@@ -118,7 +134,7 @@ function reset() {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="m in g.items" :key="m.major + m.plan">
+            <tr v-for="m in g.items" :key="m.major + m.plan" :id="rowId(m)" :class="{ 'target-row': rowId(m) === targetId }" tabindex="-1">
               <td class="major">{{ m.major }}</td>
               <td v-if="hasNum" class="nowrap">{{ m.num || '—' }}</td>
               <td v-if="hasDirs" class="dirs">
@@ -160,6 +176,8 @@ function reset() {
 </template>
 
 <style scoped>
+tr[id] { scroll-margin-top: 100px; }
+tr:target, tr.target-row { outline: 2px solid var(--vp-c-brand-1); background: var(--vp-c-brand-soft); }
 .major-table {
   margin: 16px 0;
 }

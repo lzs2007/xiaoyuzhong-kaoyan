@@ -12,6 +12,7 @@ export default defineConfig({
       { text: '首页', link: '/' },
       { text: '俄语202专区', link: '/russian-202/' },
       { text: '日语203专区', link: '/japanese-203/' },
+      { text: '按专业找院校', link: '/schools/find' },
       { text: '院校名录', link: '/schools/' },
       { text: '政策公告', link: '/news/' },
       { text: '关于与免责声明', link: '/about' }
@@ -37,6 +38,7 @@ export default defineConfig({
         {
           text: '院校名录',
           items: [
+            { text: '按专业找院校', link: '/schools/find' },
             { text: '名录总览', link: '/schools/' }
           ]
         },

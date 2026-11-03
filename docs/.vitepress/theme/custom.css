@@ -200,3 +200,8 @@
   outline-offset: 2px;
   border-radius: 6px;
 }
+
+/* 专业查询使用整栏；保留目录组件挂载以避免切换详情时延迟滚动回调访问已卸载标记。 */
+.major-search-page .VPDoc .aside { display: none; }
+.major-search-page .VPDoc .content { max-width: 100%; }
+.major-search-page .VPDoc .content-container { max-width: 100%; }

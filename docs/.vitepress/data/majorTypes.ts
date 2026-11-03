@@ -29,3 +29,11 @@ export interface SchoolMeta {
   collectedAt: string
   verified: string
 }
+
+/** 由条目身份生成稳定锚点；数组重排不会改变已分享链接。 */
+export function anchorFor(schoolId: string, entry: MajorEntry): string {
+  const identity = [entry.school, entry.major, entry.plan].join('|')
+  let hash = 2166136261
+  for (let i = 0; i < identity.length; i++) hash = Math.imul(hash ^ identity.charCodeAt(i), 16777619)
+  return `major-${schoolId}-${(hash >>> 0).toString(16)}`
+}
