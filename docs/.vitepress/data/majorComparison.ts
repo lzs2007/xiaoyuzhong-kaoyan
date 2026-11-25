@@ -51,6 +51,117 @@ export type ResolvedComparison = NonNullable<
   ReturnType<typeof resolveComparison>
 >
 
+/** 返回全部候选，不静默截断；超过4项须由用户明确选择。 */
+export function mergeComparisonCandidates(
+  local: ComparisonSelection[],
+  incoming: ComparisonSelection[],
+  entries: SearchMajor[] = searchMajors,
+) {
+  const seen = new Set<string>()
+  return [...local, ...incoming].filter((item) => {
+    const key = comparisonKey(item)
+    if (seen.has(key) || !resolveComparison(item, entries)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+export interface ComparisonRow {
+  key: string
+  label: string
+  values: string[]
+  unknown: boolean
+}
+export function comparisonRows(item: ResolvedComparison): ComparisonRow[] {
+  const { entry, selection, directions } = item
+  const row = (
+    key: string,
+    label: string,
+    values: string[],
+    unknown = false,
+  ): ComparisonRow => ({ key, label, values, unknown })
+  const excluded = entry.directions.filter(
+    (d) => !d.languages.includes(selection.language),
+  )
+  return [
+    row('year', '招生年度', [entry.year]),
+    row('language', '初试语种', [
+      selection.language === '202' ? '202俄语' : '203日语',
+    ]),
+    row(
+      'mode',
+      '学习方式',
+      [
+        selection.mode || '全部可选学习方式',
+        ...new Set(directions.map((d) => d.mode)),
+      ],
+      directions.some((d) => d.mode === '待核实'),
+    ),
+    row('degree', '学位', [entry.degree || '待核实'], !entry.degree),
+    row('college', '学院', [entry.college || '待核实'], !entry.college),
+    row('plan', '计划或专项', [entry.plan || '待核实'], !entry.plan),
+    row(
+      'directions',
+      '可选方向',
+      directions.map((d) => `${d.name} · ${d.mode}`),
+    ),
+    // 名称与科目绑定参与比较，防止两方向交换专业课后被误判为相同。
+    row(
+      'subjects',
+      '初试科目',
+      directions.map(
+        (d) =>
+          `${d.name} · ${d.mode}：${d.subjectsOriginal || '旧整理未保留完整初试科目，请核对官方原件。'}`,
+      ),
+      directions.some((d) => !d.subjectsOriginal),
+    ),
+    row(
+      'foreign',
+      '外国语原文',
+      directions.map(
+        (d) => `${d.name} · ${d.mode}：${d.foreignOriginal || '待核实'}`,
+      ),
+      directions.some((d) => !d.foreignOriginal),
+    ),
+    row(
+      'restrictions',
+      '不接受当前语种的其他方向',
+      excluded.length
+        ? excluded.map((d) => `${d.name} · ${d.mode}：${d.foreignOriginal}`)
+        : ['本条未列出不接受当前语种的其他方向，仍需核对官方目录。'],
+    ),
+    row(
+      'count',
+      '人数口径',
+      [
+        entry.countBasis || '待核实',
+        ...(entry.count ? ['目录人数：' + entry.count] : []),
+      ],
+      !entry.countBasis,
+    ),
+  ]
+}
+
+export function differingComparisonFields(
+  items: ResolvedComparison[],
+): Set<string> {
+  if (items.length < 2) return new Set()
+  const rows = items.map(comparisonRows)
+  return new Set(
+    rows[0]
+      .filter((row, i) => {
+        if (rows.some((r) => r[i].unknown)) return true
+        const signatures = rows.map((r) =>
+          JSON.stringify(
+            r[i].values.map((v) => v.replaceAll('\r\n', '\n').trim()).sort(),
+          ),
+        )
+        return new Set(signatures).size > 1
+      })
+      .map((row) => row.key),
+  )
+}
+
 /** 仅将科目原文、外国语及学习方式完全一致的方向合并展示。 */
 export function groupComparisonDirections(directions: Direction[]) {
   const groups = new Map<

@@ -1,15 +1,50 @@
 <script setup lang="ts">
 import { withBase } from 'vitepress'
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import {
   comparisonKey,
-  groupComparisonDirections,
+  comparisonRows,
+  differingComparisonFields,
 } from '../../data/majorComparison'
 import type { ResolvedComparison } from '../../data/majorComparison'
-defineProps<{ items: ResolvedComparison[]; storageFailed: boolean }>()
-defineEmits<{ remove: [key: string]; clear: []; export: [] }>()
+const props = defineProps<{
+  items: ResolvedComparison[]
+  storageFailed: boolean
+  shared: boolean
+  onlyDiff: boolean
+  notice: string
+}>()
+const emit = defineEmits<{
+  remove: [key: string]
+  clear: []
+  export: []
+  copy: []
+  save: []
+  local: []
+  'update:onlyDiff': [value: boolean]
+}>()
 const panel = ref<HTMLElement | null>(null)
 const expanded = ref(false)
+const different = computed(() => differingComparisonFields(props.items))
+const effectiveDiff = computed(() => props.onlyDiff && props.items.length >= 2)
+const cards = computed(() =>
+  props.items.map((item) => ({
+    item,
+    rows: comparisonRows(item).filter(
+      (row) => !effectiveDiff.value || different.value.has(row.key),
+    ),
+  })),
+)
+watch(
+  () => props.shared,
+  (value) => {
+    if (value) expanded.value = true
+  },
+)
+function changeDiff(event: Event) {
+  emit('update:onlyDiff', (event.target as HTMLInputElement).checked)
+  expanded.value = true
+}
 defineExpose({
   async show() {
     expanded.value = true
@@ -22,93 +57,102 @@ defineExpose({
 
 <template>
   <section
-    v-if="items.length"
+    v-if="items.length || shared"
     ref="panel"
     class="comparison"
     aria-label="选校对比"
     tabindex="-1"
   >
     <div class="comparison-header">
-      <strong>已选对比（{{ items.length }}/4）</strong>
+      <strong
+        >{{ shared ? '分享预览' : '已选对比' }}（{{ items.length }}/4）</strong
+      >
       <div>
-        <button type="button" @click="$emit('export')">导出对比 CSV</button>
-        <button type="button" @click="$emit('clear')">清空对比</button>
+        <button type="button" :disabled="!items.length" @click="$emit('copy')">
+          复制对比链接
+        </button>
+        <button
+          v-if="shared"
+          type="button"
+          :disabled="!items.length"
+          @click="$emit('save')"
+        >
+          保存到本机
+        </button>
+        <button v-if="shared" type="button" @click="$emit('local')">
+          返回本机清单
+        </button>
+        <button
+          type="button"
+          :disabled="!items.length"
+          @click="$emit('export')"
+        >
+          导出对比 CSV
+        </button>
+        <button type="button" :disabled="!items.length" @click="$emit('clear')">
+          清空对比
+        </button>
       </div>
     </div>
     <p class="save-note" role="status">
-      {{
+      <template v-if="shared"
+        >正在查看链接分享的清单；修改预览不会自动覆盖本机清单，需点击“保存到本机”。</template
+      >
+      <template v-else>{{
         storageFailed
           ? '当前浏览器无法保存，对比仅在本次页面停留期间保留。'
           : '对比保存在当前浏览器；切换筛选不清空，恢复时按当前目录重新核验。'
-      }}
-      年度、语种和学习方式以加入时为准。
+      }}</template>
+      年度、语种和学习方式以加入时为准；链接按当前数据核验，不是历史科目快照。
     </p>
+    <p v-if="notice" class="share-notice" role="status">{{ notice }}</p>
+    <slot name="save-options" />
+    <p v-if="!items.length" role="status">
+      链接中没有可显示的有效对比项。本机清单仍保留，可返回查看，或从查询结果重新选择。
+    </p>
+    <div class="diff-tools">
+      <label
+        ><input
+          type="checkbox"
+          role="switch"
+          :checked="onlyDiff"
+          :disabled="items.length < 2"
+          aria-describedby="comparison-diff-help"
+          @change="changeDiff"
+        />仅看差异项</label
+      >
+      <span id="comparison-diff-help">{{
+        items.length < 2
+          ? '至少选择2项后可用。'
+          : '相同字段折叠；缺失信息、院校身份、来源及报考提醒保留。CSV始终完整导出。'
+      }}</span>
+    </div>
     <details
+      v-if="items.length"
       :open="expanded"
       @toggle="expanded = ($event.target as HTMLDetailsElement).open"
     >
       <summary>展开对比：初试科目、可选方向与限制</summary>
+      <p v-if="effectiveDiff && !different.size" role="status">
+        所比较字段一致，已保留院校身份、官方依据和报考提醒。
+      </p>
       <div class="comparison-grid">
         <article
-          v-for="item in items"
+          v-for="{ item, rows } in cards"
           :key="comparisonKey(item.selection)"
           class="comparison-card"
         >
           <h3>{{ item.entry.university }}</h3>
-          <p>
-            {{ item.entry.code }} {{ item.entry.name }} ·
-            {{ item.entry.degree }}
-          </p>
+          <p>{{ item.entry.code }} {{ item.entry.name }}</p>
           <dl>
-            <dt>报考口径</dt>
-            <dd>
-              <strong
-                >{{ item.entry.year }} ·
-                {{
-                  item.selection.language === '202' ? '202俄语' : '203日语'
-                }}</strong
-              ><br />{{ item.selection.mode || '全部可选学习方式' }} ·
-              {{ item.entry.plan }}<br />{{ item.entry.college }}
-            </dd>
-            <dt>可选方向与初试科目</dt>
-            <dd>
-              <ul>
-                <li
-                  v-for="(group, i) in groupComparisonDirections(
-                    item.directions,
-                  )"
-                  :key="i"
-                >
-                  <strong>{{ group.names.join('；') }}</strong> ·
-                  {{ group.mode }}
-                  <p>{{ group.subjects }}</p>
-                  <p>外国语：{{ group.foreign }}</p>
-                </li>
-              </ul>
-            </dd>
-            <dt>方向限制与报考提醒</dt>
-            <dd>
-              <ul
-                v-if="
-                  item.entry.directions.some(
-                    (d) => !d.languages.includes(item.selection.language),
-                  )
-                "
-              >
-                <li
-                  v-for="(d, i) in item.entry.directions.filter(
-                    (d) => !d.languages.includes(item.selection.language),
-                  )"
-                  :key="i"
-                >
-                  {{ d.name }}：{{ d.foreignOriginal }}
-                </li>
-              </ul>
-              <p>{{ item.entry.countBasis }}</p>
-              <p>
-                语种可选不代表满足全部报考条件，请核对专项、校区与复试要求。
-              </p>
-            </dd>
+            <template v-for="row in rows" :key="row.key">
+              <dt :data-field="row.key">{{ row.label }}</dt>
+              <dd :data-field="row.key">
+                <ul>
+                  <li v-for="(value, i) in row.values" :key="i">{{ value }}</li>
+                </ul>
+              </dd>
+            </template>
             <dt>官方依据</dt>
             <dd>
               <a :href="withBase(item.entry.detailUrl)">查看对应专业 →</a><br />
@@ -124,6 +168,9 @@ defineExpose({
               </p>
             </dd>
           </dl>
+          <p class="comparison-reminder">
+            语种可选不代表满足全部报考条件，请核对专项、校区与复试要求。
+          </p>
           <button
             type="button"
             :aria-label="`移除对比 ${item.entry.university} ${item.entry.code} ${item.entry.year} ${item.selection.language} ${item.selection.mode || '全部方式'}`"
@@ -138,6 +185,37 @@ defineExpose({
 </template>
 
 <style scoped>
+.diff-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 16px 0;
+}
+.diff-tools label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.diff-tools input {
+  width: 18px;
+  height: 18px;
+}
+.diff-tools span,
+.share-notice {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.diff-tools span {
+  color: var(--vp-c-text-2);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .comparison {
   margin: 20px 0;
   padding: 16px;
