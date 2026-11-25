@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { withBase } from 'vitepress'
 import {
   coverage,
@@ -8,47 +8,43 @@ import {
   filterMajors,
   matchingDirections,
   matchesRegion,
-  parseFilters,
   searchMajors,
-  serializeFilters,
 } from '../../data/majorSearch'
 import { catalogSources } from '../../data/collectedEngineering'
 import MajorComparison from './MajorComparison.vue'
 import {
   comparisonKey,
   comparisonLimit,
-  comparisonStorageKey,
   comparisonsCsv,
   makeComparison,
   resolveComparison,
-  restoreComparisons,
 } from '../../data/majorComparison'
-import type { ComparisonSelection } from '../../data/majorComparison'
-import type { SearchMajor } from '../../data/majorSearch'
+import { useComparisonSharing } from '../composables/useComparisonSharing'
 const filters = reactive({ ...defaults })
-const ready = ref(false)
-const selections = ref<ComparisonSelection[]>([])
-const storageFailed = ref(false)
 const comparisonPanel = ref<InstanceType<typeof MajorComparison> | null>(null)
-const selectedItems = computed(() =>
-  selections.value.flatMap((s) => {
-    const item = resolveComparison(s)
-    return item ? [item] : []
-  }),
-)
-function isSelected(entry: SearchMajor) {
-  const key = comparisonKey(makeComparison(entry, filters))
-  return selections.value.some((s) => comparisonKey(s) === key)
-}
-function removeSelection(key: string) {
-  selections.value = selections.value.filter((s) => comparisonKey(s) !== key)
-}
-function toggleComparison(entry: SearchMajor) {
-  if (isSelected(entry))
-    removeSelection(comparisonKey(makeComparison(entry, filters)))
-  else if (selections.value.length < comparisonLimit)
-    selections.value.push(makeComparison(entry, filters))
-}
+const {
+  selections,
+  selectedItems,
+  shared,
+  onlyDiff,
+  storageFailed,
+  notice,
+  copyStatus,
+  fallbackLink,
+  mergeState,
+  mergeKeys,
+  mergeOptions,
+  cancelMerge,
+  confirmMerge,
+  saveToLocal,
+  returnToLocal,
+  copyLink,
+  clearCopyFeedback,
+  isSelected,
+  toggleComparison,
+  removeSelection,
+  clearComparisons,
+} = useComparisonSharing(filters)
 function downloadCsv(selected = false) {
   const items = selected
     ? selectedItems.value
@@ -131,9 +127,6 @@ const results = computed(() => filterMajors(searchMajors, filters))
 const schoolsCount = computed(
   () => new Set(results.value.map((e) => e.schoolId)).size,
 )
-function restore() {
-  Object.assign(filters, parseFilters(window.location.search))
-}
 function clear() {
   Object.assign(filters, {
     ...defaults,
@@ -147,55 +140,6 @@ function changeYear() {
   filters.degree = ''
   filters.mode = ''
 }
-function historical() {
-  filters.year = '2026'
-  changeYear()
-}
-watch(
-  filters,
-  () => {
-    if (!ready.value) return
-    const next =
-      window.location.pathname +
-      serializeFilters(filters) +
-      window.location.hash
-    if (
-      next !==
-      window.location.pathname + window.location.search + window.location.hash
-    )
-      window.history.pushState({}, '', next)
-  },
-  { flush: 'post' },
-)
-onMounted(() => {
-  restore()
-  try {
-    selections.value = restoreComparisons(
-      window.localStorage.getItem(comparisonStorageKey),
-    )
-  } catch {
-    storageFailed.value = true
-  }
-  ready.value = true
-  window.addEventListener('popstate', restore)
-})
-watch(
-  selections,
-  () => {
-    if (!ready.value) return
-    try {
-      window.localStorage.setItem(
-        comparisonStorageKey,
-        JSON.stringify({ version: 1, items: selections.value }),
-      )
-      storageFailed.value = false
-    } catch {
-      storageFailed.value = true
-    }
-  },
-  { deep: true },
-)
-onUnmounted(() => window.removeEventListener('popstate', restore))
 </script>
 
 <template>
@@ -324,13 +268,81 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
       :items="selectedItems"
       :storage-failed="storageFailed"
       @remove="removeSelection"
-      @clear="selections = []"
+      :shared="shared"
+      :only-diff="onlyDiff"
+      :notice="notice"
+      @copy="copyLink(true)"
+      @save="saveToLocal"
+      @local="returnToLocal"
+      @update:only-diff="onlyDiff = $event"
+      @clear="clearComparisons"
       @export="downloadCsv(true)"
-    />
+    >
+      <template #save-options>
+        <form
+          v-if="mergeState"
+          class="merge-panel"
+          aria-label="选择本机保留项"
+          @submit.prevent="confirmMerge"
+        >
+          <fieldset>
+            <legend>选择保留到本机的项目（{{ mergeKeys.length }}/4）</legend>
+            <p>未勾选的原本机项目将被移除；分享预览不受影响。</p>
+            <label
+              v-for="item in mergeOptions"
+              :key="comparisonKey(item.selection)"
+            >
+              <input
+                v-model="mergeKeys"
+                type="checkbox"
+                :value="comparisonKey(item.selection)"
+                :disabled="
+                  mergeKeys.length >= comparisonLimit &&
+                  !mergeKeys.includes(comparisonKey(item.selection))
+                "
+              />
+              <span
+                >{{ item.entry.university }} · {{ item.entry.code }}
+                {{ item.entry.name }} · {{ item.entry.college }} ·
+                {{ item.entry.year }} · {{ item.selection.language }} ·
+                {{ item.selection.mode || '全部方式' }}</span
+              >
+            </label>
+          </fieldset>
+          <button
+            type="submit"
+            :disabled="!mergeKeys.length || mergeKeys.length > comparisonLimit"
+          >
+            确认保存所选项
+          </button>
+          <button type="button" @click="cancelMerge">取消合并</button>
+        </form>
+      </template>
+    </MajorComparison>
+    <div v-if="copyStatus || fallbackLink" class="share-feedback">
+      <p v-if="copyStatus" class="share-status" role="status">
+        {{ copyStatus }}
+      </p>
+      <label v-if="fallbackLink" class="fallback-link"
+        >手动复制链接<input
+          :value="fallbackLink"
+          readonly
+          @focus="($event.target as HTMLInputElement).select()"
+          @click="($event.target as HTMLInputElement).select()"
+      /></label>
+      <button
+        type="button"
+        aria-label="关闭分享提示"
+        @click="clearCopyFeedback"
+      >
+        关闭
+      </button>
+    </div>
     <div class="result-tools">
       <p class="muted">
         可加入最多4项对比，比较初试科目与方向限制。空格分隔关键词可组合搜索。
       </p>
+      <button type="button" @click="copyLink(false)">复制筛选链接</button>
       <button type="button" :disabled="!results.length" @click="downloadCsv()">
         导出当前结果 CSV
       </button>
@@ -458,7 +470,7 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
       </article>
     </div>
     <button
-      v-if="selections.length"
+      v-if="selections.length && !mergeState"
       type="button"
       class="comparison-jump"
       @click="comparisonPanel?.show()"
@@ -469,6 +481,59 @@ onUnmounted(() => window.removeEventListener('popstate', restore))
 </template>
 
 <style scoped>
+.merge-panel {
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+}
+.merge-panel fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.merge-panel label {
+  flex-direction: row;
+  align-items: flex-start;
+  margin: 12px 0;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.merge-panel input[type='checkbox'] {
+  width: 18px;
+  min-height: 18px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.merge-panel button {
+  margin: 8px 8px 0 0;
+}
+.share-feedback {
+  position: fixed;
+  bottom: 76px;
+  right: 20px;
+  z-index: 25;
+  width: min(360px, calc(100vw - 40px));
+  padding: 14px;
+  border: 1px solid var(--vp-c-brand-1);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px #0002;
+  background: var(--vp-c-bg);
+}
+.share-feedback p {
+  margin: 0 0 8px;
+}
+.share-feedback button {
+  margin-top: 8px;
+}
+.share-status,
+.fallback-link {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.fallback-link input {
+  min-width: 0;
+}
 .topic-filters {
   display: flex;
   flex-wrap: wrap;
